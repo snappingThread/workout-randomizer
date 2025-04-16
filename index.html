@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Plan Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #f7f7f7;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .form-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .output-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .output-container h2 {
+            margin-top: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Workout Plan Generator</h1>
+    <div class="form-container">
+        <label for="muscle-group">Target Muscle Group:</label>
+        <select id="muscle-group">
+            <option value="chest">Chest</option>
+            <option value="back">Back</option>
+            <option value="legs">Legs</option>
+            <option value="arms">Arms</option>
+            <option value="shoulders">Shoulders</option>
+            <option value="core">Core</option>
+        </select>
+
+        <label for="workout-time">Workout Time (minutes):</label>
+        <input type="number" id="workout-time" placeholder="Enter workout time">
+
+        <label for="max-weight">Max Lifting Weight (lbs):</label>
+        <input type="number" id="max-weight" placeholder="Enter max lifting weight">
+
+        <button id="generate-btn">Generate Workout Plan</button>
+    </div>
+
+    <div class="output-container" id="output">
+        <h2>Workout Plan</h2>
+        <p>Fill in the details above and click "Generate Workout Plan" to see your plan here!</p>
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generate-btn');
+        const outputContainer = document.getElementById('output');
+
+        generateBtn.addEventListener('click', async () => {
+            const muscleGroup = document.getElementById('muscle-group').value;
+            const workoutTime = parseInt(document.getElementById('workout-time').value, 10);
+            const maxWeight = parseInt(document.getElementById('max-weight').value, 10);
+
+            if (isNaN(workoutTime) || isNaN(maxWeight)) {
+                outputContainer.innerHTML = '<p>Please enter valid numbers for workout time and max weight.</p>';
+                return;
+            }
+
+            const exercises = await fetchExercises(muscleGroup);
+            if (!exercises.length) {
+                outputContainer.innerHTML = '<p>No exercises found for this muscle group.</p>';
+                return;
+            }
+
+            const workoutPlan = generateWorkoutPlan(exercises, workoutTime, maxWeight);
+            displayWorkoutPlan(workoutPlan);
+        });
+
+        async function fetchExercises(muscleGroup) {
+            try {
+                const response = await fetch(`https://wger.de/api/v2/exercise/?category=${muscleGroup}`);
+                const data = await response.json();
+                return data.results || [];
+            } catch (error) {
+                console.error('Error fetching exercises:', error);
+                return [];
+            }
+        }
+
+        function generateWorkoutPlan(exercises, workoutTime, maxWeight) {
+            const setsPerExercise = Math.floor(workoutTime / (exercises.length * 3));
+            return exercises.map(exercise => {
+                return {
+                    name: exercise.name,
+                    sets: setsPerExercise,
+                    reps: Math.min(12, Math.floor(maxWeight / 10)),
+                    rest: 60
+                };
+            });
+        }
+
+        function displayWorkoutPlan(plan) {
+            outputContainer.innerHTML = '<h2>Your Workout Plan</h2>';
+            plan.forEach(exercise => {
+                const exerciseHTML = `
+                    <div>
+                        <h3>${exercise.name}</h3>
+                        <p>Sets: ${exercise.sets}</p>
+                        <p>Reps: ${exercise.reps}</p>
+                        <p>Rest: ${exercise.rest} seconds</p>
+                    </div>
+                `;
+                outputContainer.innerHTML += exerciseHTML;
+            });
+        }
+    </script>
+</body>
+</html>
