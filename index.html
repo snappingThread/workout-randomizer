@@ -123,14 +123,28 @@
         });
 
         async function fetchExercises(muscleGroup) {
-            try {
-                const response = await fetch(`https://wger.de/api/v2/exercise/?category=${muscleGroup}`);
-                const data = await response.json();
-                return data.results || [];
-            } catch (error) {
-                console.error('Error fetching exercises:', error);
-                return [];
-            }
+            const xhr = new XMLHttpRequest();
+            xhr.withCredentials = true;
+
+            return new Promise((resolve, reject) => {
+                xhr.addEventListener('readystatechange', function () {
+                    if (this.readyState === this.DONE) {
+                        try {
+                            const data = JSON.parse(this.responseText);
+                            resolve(data);
+                        } catch (error) {
+                            console.error('Error parsing response:', error);
+                            resolve([]);
+                        }
+                    }
+                });
+
+                xhr.open('GET', `https://exercisedb.p.rapidapi.com/exercises/bodyPart/${muscleGroup}`);
+                xhr.setRequestHeader('x-rapidapi-key', '91401393b5mshe07ca1374d07e4bp178bcdjsn212b7b33ab15');
+                xhr.setRequestHeader('x-rapidapi-host', 'exercisedb.p.rapidapi.com');
+
+                xhr.send(null);
+            });
         }
 
         function generateWorkoutPlan(exercises, workoutTime, maxWeight) {
